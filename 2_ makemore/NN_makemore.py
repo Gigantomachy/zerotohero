@@ -95,18 +95,19 @@ for k in range(20):
     print(''.join(out))
 
 # loss = -prob[torch.arange(5), ys].log() is equivalent to:
-		# nlls = torch.zeros(5)
 
-		# # assuming we are still dealing with ".emma"
-		# for i in range(5):
-		# 	# i-th bigram:
-		# 	x = xs[i].item() # input character index
-		# 	y = ys[i].item() # label character index
+# nlls = torch.zeros(5)
+
+# # assuming we are still dealing with ".emma"
+# for i in range(5):
+# 	# i-th bigram:
+# 	x = xs[i].item() # input character index
+# 	y = ys[i].item() # label character index
 			
-		# 	p = probs[i, y]
-		# 	logp = torch.log(p)
+# 	p = probs[i, y]
+# 	logp = torch.log(p)
 
-		# 	nll = -logp
-		# 	nlls[i] = nll
+# 	nll = -logp
+# 	nlls[i] = nll
 
 
