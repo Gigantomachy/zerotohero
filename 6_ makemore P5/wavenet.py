@@ -22,7 +22,7 @@ random.seed(42)
 random.shuffle(words)
 
 # build the dataset
-block_size = 3 # context length: how many characters do we take to predict the next one?
+block_size = 8 # context length: how many characters do we take to predict the next one?
 
 def build_dataset(words):  
   X, Y = [], []
@@ -65,6 +65,11 @@ class Linear:
     return [self.weight] + ([] if self.bias is None else [self.bias])
 
 # -----------------------------------------------------------------------------------------------
+# also departing from pytorch api, pytorch reduces over 0, or 0,2 not 0,1
+# without the if else in __call__ we would be breaking the running mean and variance
+# we would have (1, 4, 20) instead of (1, 1, 20) - we would be collecting different means and variances
+# over different time steps
+# instead we want one mean and variance for each neuron
 class BatchNorm1d:
   
   def __init__(self, dim, eps=1e-5, momentum=0.1):
@@ -133,6 +138,39 @@ class Flatten:
         return []
 
 # -----------------------------------------------------------------------------------------------
+# we are starting to depart from pytorch API
+# if n = 2, x = (32, 8, 10), a single example: (1, 8, 10)
+# a | 1 2 3 4 ...
+# b | 1 2 3 4 ...
+# c | 1 2 3 4 ...
+# d | 1 2 3 4 ...
+# e | 1 2 3 4 ...
+# f | 1 2 3 4 ...
+# ...
+# it becomes
+# ab | 1 2 3 4 ... 1 2 3 4 ...
+# cd | 1 2 3 4 ... 1 2 3 4 ...
+class FlattenConsecutive:
+    def __init__(self, n):
+        self.n = n
+    def __call__(self, x):
+        B, T, C = x.shape
+        x = x.view(B, T//self.n, C*self.n)
+        # why the squeeze? consider:
+        # x = x.view(32, 8//2, 10*2) -> (32, 4, 20)
+        # then
+        # x = x.view(32, 8//4, 10*4) -> (32, 2, 40)
+        # then
+        # x = x.view(32, 8//8, 10*8) -> (32, 1, 80) -> squeeze -> (32, 80)
+        # squeeze gets rid of the dimension if 1, (32, 80) is what the layers eventually expect
+        if x.shape[1] == 1:
+            x = x.squeeze(1)
+        self.out = x
+        return self.out
+    def parameters(self):
+        return []
+
+# -----------------------------------------------------------------------------------------------
 # PyTorch has containers to help organize models. Here we make our own version of the Sequential container
 # which just sequentially passes an input through a bunch of layers
 class Sequential:
@@ -150,14 +188,15 @@ torch.manual_seed(42); # seed rng for reproducibility
 
 # Hyperparameters
 n_embd = 10 # the dimensionality of the character embedding vectors
-n_hidden = 200 # the number of neurons in the hidden layer of the MLP
+n_hidden = 128 # the number of neurons in the hidden layer of the MLP
 
 #C = torch.randn((vocab_size, n_embd))
 #layers = [
 model = Sequential([
     Embedding(vocab_size, n_embd),
-    Flatten(),
-    Linear(n_embd * block_size, n_hidden, bias=False), BatchNorm1d(n_hidden), Tanh(),
+    FlattenConsecutive(2), Linear(n_embd * 2, n_hidden, bias=False), BatchNorm1d(n_hidden), Tanh(),
+    FlattenConsecutive(2), Linear(n_hidden * 2, n_hidden, bias=False), BatchNorm1d(n_hidden), Tanh(),
+    FlattenConsecutive(2), Linear(n_hidden * 2, n_hidden, bias=False), BatchNorm1d(n_hidden), Tanh(),
     Linear(n_hidden, vocab_size),
 ])
 
@@ -178,8 +217,8 @@ max_steps = 200000
 batch_size = 32
 lossi = []
 
-#for i in range(max_steps):
-for i in range(1):
+for i in range(max_steps):
+#for i in range(1):
     
     # minibatch construct
     ix = torch.randint(0, Xtr.shape[0], (batch_size,))
