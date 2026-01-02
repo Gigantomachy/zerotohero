@@ -1,0 +1,25 @@
+$ python tiny_shakespeare_V3.py
+length of dataset in characters:  1115394
+torch.Size([1115394]) torch.int64
+device is: cuda
+inputs:
+torch.Size([64, 256])
+targets:
+torch.Size([64, 256])
+Entering training loop.
+step 0: train loss 4.5571, val loss 4.5515
+step 500: train loss 1.7816, val loss 1.9178
+step 1000: train loss 1.4464, val loss 1.6569
+step 1500: train loss 1.3139, val loss 1.5579
+step 2000: train loss 1.2297, val loss 1.5159
+step 2500: train loss 1.1694, val loss 1.5252
+step 3000: train loss 1.1079, val loss 1.5068
+step 3500: train loss 1.0493, val loss 1.5201
+step 4000: train loss 0.9963, val loss 1.5424
+step 4500: train loss 0.9336, val loss 1.5646
+
+None so ordivantion, as 'twere two
+By letter ransorted or old Catus.
+Sir Peter,
+Think thou means to
+
